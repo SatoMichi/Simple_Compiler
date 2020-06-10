@@ -3,6 +3,7 @@ import re
 def parser(code):
     # remove all the spaces
     code = re.sub(r"\s+","",code)
+    code = re.sub(r"//.*","",code)
     # prepare parsed info
     result = {"Type":"","symbol":"","dst":"","comp":"","jmp":""}
     result["Type"] = commandType(code)
@@ -16,7 +17,9 @@ def parser(code):
     return result
 
 def commandType(code):
-    if code[0] == "@":
+    if code == "":
+        return "COMMENT"
+    elif code[0] == "@":
         return "A_COMMAND"
     elif code[0] == "(":
         return "L_COMMAND"
