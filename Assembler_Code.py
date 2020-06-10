@@ -40,3 +40,38 @@ comp2bin = {
     "D&A" : [0,0,0,0,0,0,0], "D&M" : [1,0,0,0,0,0,0],
     "D|A" : [0,0,1,0,1,0,1], "D|M" : [1,0,1,0,1,0,1]
 }
+
+def rowCoder(parse):
+    if parse["Type"] == "A_COMMAND":
+        return row_a_cmd2bin(parse)
+    elif parse["Type"] == "C_COMMAND":
+        return row_c_cmd2bin(parse)
+    else:
+        return ""
+
+def row_a_cmd2bin(parse):
+    head = "0"
+    num = dec2bin(int(parse["symbol"]))
+    return head + num
+
+def row_c_cmd2bin(parse):
+    head = "111"
+    dstbin = "".join(map(str,dest(parse["dst"])))
+    compbin = "".join(map(str,comp(parse["comp"])))
+    jmpbin = "".join(map(str,jmp(parse["jmp"])))
+
+    return head+compbin+dstbin+jmpbin
+
+def dest(s):
+    return dest2bin[s]
+
+def comp(s):
+    return comp2bin[s]
+
+def jmp(s):
+    return jmp2bin[s]
+
+def dec2bin(num):
+    b = bin(num)[2:]
+    pat = "0" * (15-len(b))
+    return pat + b
