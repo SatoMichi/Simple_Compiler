@@ -1,9 +1,9 @@
 import re
 
-def parser(code):
+def parser(code,filename):
     code = re.sub(r"//.*","",code)
-    code = code.split(" ")
-    result = {"Type":"", "arg1":"", "arg2":""}
+    code = code.split(r"\s+")
+    result = {"Type":"", "arg1":"", "arg2":"", "filename": filename}
     result["Type"] = commandType(code)
     result["arg1"] = commandArg1(code,result["Type"])
     result["arg2"] = commandArg2(code,result["Type"])

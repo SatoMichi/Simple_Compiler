@@ -15,43 +15,43 @@ def writeArithmetic(command,count=0):
     
     s  = ""
     if command["arg1"] in ["add", "sub", "and", "or"]:
-        s += "@SP"
-        s += "AM = M-1" # decrease SP
-        s += "D = M"
-        s += "@SP"
-        s += "AM = M-1" # decrease SP
-        s += biArithCommand[command["arg1"]]
+        s += "@SP" + "\n"
+        s += "AM = M-1" + "\n" # decrease SP
+        s += "D = M" + "\n"
+        s += "@SP" + "\n"
+        s += "AM = M-1" + "\n" # decrease SP
+        s += biArithCommand[command["arg1"]] + "\n"
         
     elif command["arg1"] in ["neg","not"]:
-        s += "@SP"
-        s += "AM = M-1" # decrease SP
-        s += biArithCommand[command["arg1"]]
+        s += "@SP" + "\n"
+        s += "AM = M-1" + "\n" # decrease SP
+        s += biArithCommand[command["arg1"]] + "\n"
     
     else:
-        s += "@SP"
-        s += "AM = M-1" # decrease SP
-        s += "D = M"
-        s += "@SP"
-        s += "AM = M-1"
-        s += "D = M-D"
-        s += "@IS_"+label
-        s += "D;"+biCompareCommand[command["arg1"]]
-        s += "@SP"
-        s += "A = M"
-        s += "M = 0"
-        s += "@INC_SP_"+label
-        s += "0;JMP"
-        s += "(IS_"+label+")"
-        s += "@SP"
-        s += "A = M"
-        s += "M = -1"
-        s += "(INC_SP_"+label+")"
+        s += "@SP" + "\n"
+        s += "AM = M-1" + "\n" # decrease SP
+        s += "D = M" + "\n"
+        s += "@SP" + "\n"
+        s += "AM = M-1" + "\n"
+        s += "D = M-D" + "\n"
+        s += "@IS_"+label + "\n"
+        s += "D;"+biCompareCommand[command["arg1"]] + "\n"
+        s += "@SP" + "\n"
+        s += "A = M" + "\n"
+        s += "M = 0" + "\n"
+        s += "@INC_SP_"+label + "\n"
+        s += "0;JMP" + "\n"
+        s += "(IS_"+label+")" + "\n"
+        s += "@SP" + "\n"
+        s += "A = M" + "\n"
+        s += "M = -1" + "\n"
+        s += "(INC_SP_"+label+")" + "\n"
     
-    s += "@SP"
-    s += "M = M+1" # increase SP
+    s += "@SP" + "\n"
+    s += "M = M+1" + "\n" # increase SP
     return s
 
-def writePush(command,filename):
+def writePush(command):
     segmentBase = {"local"   : "LCL",
                    "argument": "ARG",
                    "this"    : "THIS",
@@ -60,45 +60,46 @@ def writePush(command,filename):
 
     segment = command["arg1"]
     index = command["arg2"]
+    filename = command["filename"]
 
     s = ""
     if segment == "constant":
-        s += "@"+index
-        s += "D = A"
+        s += "@"+index + "\n"
+        s += "D = A" + "\n"
 
     elif segment in segmantBase:
-        s += "@"+segmantBase[segment]
+        s += "@"+segmantBase[segment] + "\n"
         
         if segment == "temp":
-            s += "D = A"
+            s += "D = A" + "\n"
         else:
-            s += "D = M"
+            s += "D = M" + "\n"
         
-        s += "@"+index
-        s += "D = D+A"
-        s += "A = D"
-        s += "D = M"
+        s += "@"+index + "\n"
+        s += "D = D+A" + "\n"
+        s += "A = D" + "\n"
+        s += "D = M" + "\n"
 
     elif segment == "pointer" and index == "0":
-        s += "@THIS"
-        s += "D = M"
+        s += "@THIS" + "\n"
+        s += "D = M" + "\n"
     
     elif segment == "pointer" and index == "1":
-        s += "@THAT"
-        s += "D = M"
+        s += "@THAT" + "\n"
+        s += "D = M" + "\n"
 
     elif segment == "static":
-        s += "@"+filename+"."+index
-        s += "D = M"
+        s += "@"+filename+"."+index + "\n"
+        s += "D = M" + "\n"
         
-    s += "@SP"
-    s += "A = M"
-    s += "M = D"
-    s += "@SP"
-    s += "M = M+1"
+    s += "@SP" + "\n"
+    s += "A = M" + "\n"
+    s += "M = D" + "\n"
+    s += "@SP" + "\n"
+    s += "M = M+1" + "\n"
     return s
 
-def writePop(command,filename):
+def writePop(command):
     segmentBase = {"local"   : "LCL",
                    "argument": "ARG",
                    "this"    : "THIS",
@@ -107,44 +108,45 @@ def writePop(command,filename):
 
     segment = command["arg1"]
     index = command["arg2"]
+    filename = command["filename"]
 
     s = ""
-    s += "@SP"
-    s += "M = M-1"
+    s += "@SP" + "\n"
+    s += "M = M-1" + "\n"
     
     if segment == "static":
-        s += "@SP"
-        s += "A = M"
-        s += "D = M"
-        s += "@"+filename+"."+index
-        s += "M = D"
+        s += "@SP" + "\n"
+        s += "A = M" + "\n"
+        s += "D = M" + "\n"
+        s += "@"+filename+"."+index + "\n"
+        s += "M = D" + "\n"
         return s
 
     if segment in segmentBase:
-        s += "@"+segmentBase[segment]
+        s += "@"+segmentBase[segment] + "\n"
 
         if segmentBase == "temp":
-            s += "D = A"
+            s += "D = A" + "\n"
         else:
-            s += "D = M"
+            s += "D = M" + "\n"
         
-        s += "@"+index
-        s += "D = D+A"
+        s += "@"+index + "\n"
+        s += "D = D+A" + "\n"
 
     elif segment == "pointer" and index=="0":
-        s += "@THIS"
-        s += "D = A"
+        s += "@THIS" + "\n"
+        s += "D = A" + "\n"
 
     elif segment == "pointer" and index=="1":
-        s += "@THAT"
-        s += "D = A"
+        s += "@THAT" + "\n"
+        s += "D = A" + "\n"
 
-    s += "@R13"
-    s += "M = D"
-    s += "@SP"
-    s += "A = M"
-    s += "D = M"
-    s += "@R13"
-    s += "A = M"
-    s += "M = D"
+    s += "@R13" + "\n"
+    s += "M = D" + "\n"
+    s += "@SP" + "\n"
+    s += "A = M" + "\n"
+    s += "D = M" + "\n"
+    s += "@R13" + "\n"
+    s += "A = M" + "\n"
+    s += "M = D" + "\n"
     return s
