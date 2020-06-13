@@ -1,3 +1,4 @@
+import re
 
 def parser(code):
     code = re.sub(r"//.*","",code)
