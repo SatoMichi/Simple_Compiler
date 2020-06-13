@@ -2,7 +2,8 @@ import re
 
 def parser(code,filename):
     code = re.sub(r"//.*","",code)
-    code = code.split(r"\s+")
+    code = re.sub(r"\n","",code)
+    code = code.split(" ")
     result = {"Type":"", "arg1":"", "arg2":"", "filename": filename}
     result["Type"] = commandType(code)
     result["arg1"] = commandArg1(code,result["Type"])
@@ -35,7 +36,7 @@ def commandType(code):
 def commandArg1(code,ctype):
     if ctype == "C_RETURN" or ctype == "UNKNOWN":
         return ""
-    elif ctype == "C_ARITHMETIC"::
+    elif ctype == "C_ARITHMETIC":
         return code[0]
     else:
         return code[1]

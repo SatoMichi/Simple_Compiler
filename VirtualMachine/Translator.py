@@ -1,6 +1,7 @@
 from Parser import parser
 from CodeWriter import writeArithmetic, writePush, writePop
 import os
+import sys
 
 class VM_Translator:
     def __init__(self,path):
@@ -8,17 +9,17 @@ class VM_Translator:
         if ".vm" in path:
             self.files.append(path)
         else:
-            os.chdir(path)
-            for f in os.listdir():
-                self.files.append(f)
+            os.chdir(path) 
+            for filepath in os.listdir():
+                self.files.append(filepath)
         self.asmcode = ""
     
     def parseFiles(self):
         self.parsed = []
-        for f in self.files:
-            with open(f) as code:
-                for line in code.readlines():
-                    self.parsed.append(parse(line))
+        for filename in self.files:
+            with open(filename) as vmcode:
+                for line in vmcode.readlines():
+                    self.parsed.append(parser(line,filename))
         self.parsed = [parsed for parsed in self.parsed if not parsed["Type"] == "UNKNOWN"]
 
     def translate(self):
@@ -33,3 +34,11 @@ class VM_Translator:
     def write(self,path):
         with open(path,"w") as f:
             f.write(self.asmcode)
+
+if __name__ == "__main__":
+    pathi = sys.argv[1]
+    patho = sys.argv[2]
+    vm = VM_Translator(pathi)
+    vm.parseFiles()
+    vm.translate()
+    vm.write(patho)
