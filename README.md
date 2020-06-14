@@ -13,5 +13,12 @@ This project is tring to implement the assembler and compiler by Python based on
       dictionaly is used for the data trasfered between modules. SimbolTable is implemented as wrapper class of the dictionary, therefore,
       dictionary in Python can be directly used instead of this class.
 
+    * VM変換器は基本的にはアセンブラと同じような構造となっている。ただし、コードライターは内部的に異なるアセンブリ言語のラベルを生成するために
+      カウントを覚えておく必要があったため、関数ではなくクラスとして実装した。また変換器のメソッドはお互いにある程度独立しており、変換を完了
+      するには全メソッドを順番に呼ぶ必要がある。
+      The structure of VM translator is basically same with Assembler. However, CodeWriter is implemented as class, since it need to 
+      record number of command called to generate the different Assembler Label. In addition, there is no one method which will translate
+      the code at once. Instead of that, each methods have to be called in appropriate order.
+
 Reference lists:  
 コンピュータシステムの理論と実装 ―モダンなコンピュータの作り方　オライリージャパン (2015/3/25)
