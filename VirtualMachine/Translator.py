@@ -10,7 +10,7 @@ class VM_Translator:
         if ".vm" in path:
             self.files.append(path)
         else:
-            os.chdir(path) 
+            os.chdir(path)
             for filepath in os.listdir():
                 self.files.append(filepath)
         self.asmcode = ""
@@ -20,10 +20,13 @@ class VM_Translator:
         for filename in self.files:
             with open(filename) as vmcode:
                 for line in vmcode.readlines():
-                    self.parsed.append(parser(line,filename))
+                    self.parsed.append(parser(line,filename[:-3]))
         self.parsed = [parsed for parsed in self.parsed if not parsed["Type"] == "UNKNOWN"]
 
     def translate(self):
+        # initialize with Sys.init
+        #self.asmcode += self.cw.boostrap()
+
         for line in self.parsed:
             if line["Type"] == "C_ARITHMETIC":
                 self.asmcode += self.cw.writeArithmetic(line)
