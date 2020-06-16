@@ -25,7 +25,7 @@ class VM_Translator:
 
     def translate(self):
         # initialize with Sys.init
-        #self.asmcode += self.cw.boostrap()
+        self.asmcode += self.cw.boostrap()
 
         for line in self.parsed:
             if line["Type"] == "C_ARITHMETIC":
@@ -40,6 +40,14 @@ class VM_Translator:
                 self.asmcode += self.cw.writeGoto(line)
             elif line["Type"] == "C_IF":
                 self.asmcode += self.cw.writeIfGoto(line)
+            elif line["Type"] == "C_FUNCTION":
+                self.asmcode += self.cw.writeFuncDef(line)
+            elif line["Type"] == "C_CALL":
+                self.asmcode += self.cw.writeFuncCall(line)
+            elif line["Type"] == "C_RETURN":
+                self.asmcode += self.cw.writeReturn(line)
+            else:
+                self.asmcode += ""
     
     def write(self,path):
         with open(path,"w") as f:

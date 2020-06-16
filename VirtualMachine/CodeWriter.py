@@ -199,7 +199,7 @@ class CodeWriter:
 
         s = ""
         s += "@"+nOfLocal + "\n"
-        s += "(LOOP_INIT_LOCAL_"+funcName+"_"+fid")" + "\n"
+        s += "(LOOP_INIT_LOCAL_"+funcName+"_"+fid+")" + "\n"
         s += "@NO_ARG_"+funcName+"_"+fid + "\n"
         s += "D ; JEQ" + "\n"
         s += "@SP" + "\n"
@@ -266,7 +266,7 @@ class CodeWriter:
 
     def writeRestoreFrame(self):
         segs = ["LCL","ARG","THIS","THAT"]
-        addr = [1, 2, 3, 4]
+        addr = ["1", "2", "3", "4"]
         s = ""
         for seg, a in zip(segs, addr):
             s += "@"+a + "\n"
