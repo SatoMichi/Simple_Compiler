@@ -268,13 +268,13 @@ class CodeWriter:
 
     def writeRestoreFrame(self):
         segs = ["THAT","THIS","ARG","LCL"]
-        addr = ["4", "3", "2", "1"]
+        addr = ["1", "2", "3", "4"]
         s = ""
         for seg, a in zip(segs, addr):
             s += "@"+a + "\n"
             s += "D = A" + "\n"
             s += "@R13" + "\n"
-            s += "A = M+D" + "\n"
+            s += "A = M-D" + "\n"
             s += "D = M" + "\n"
             s += "@"+seg + "\n"
             s += "M = D" + "\n"
@@ -285,10 +285,12 @@ class CodeWriter:
         # R13 is address of buttom of current stack
         s += "@LCL" + "\n"
         s += "D = M" + "\n"
-        s += "@5" + "\n"
-        s += "D = D-A" + "\n"
         s += "@R13" + "\n"
-        s += "AM = D" + "\n"
+        s += "M = D" + "\n"
+        s += "@5" + "\n"
+        s += "D = A" + "\n"
+        s += "@R13" + "\n"
+        s += "A = M-D" + "\n"
         s += "D = M" + "\n"
         # save return address to R14
         s += "@R14" + "\n"
