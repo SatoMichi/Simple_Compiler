@@ -198,7 +198,9 @@ class CodeWriter:
         nOfLocal = command["arg2"]
 
         s = ""
+        s += "("+funcName+")" + "\n"
         s += "@"+nOfLocal + "\n"
+        s += "D = A" + "\n"
         s += "(LOOP_INIT_LOCAL_"+funcName+"_"+fid+")" + "\n"
         s += "@NO_ARG_"+funcName+"_"+fid + "\n"
         s += "D ; JEQ" + "\n"
@@ -247,7 +249,7 @@ class CodeWriter:
         s += self.writeSaveFrame()
         # set new ARG
         s += "@SP" + "\n"
-        s += "D = M"
+        s += "D = M" + "\n"
         s += "@"+nOfArg + "\n"
         s += "D = D-A" + "\n"
         s += "@5" + "\n"
@@ -265,14 +267,14 @@ class CodeWriter:
         return s
 
     def writeRestoreFrame(self):
-        segs = ["LCL","ARG","THIS","THAT"]
+        segs = ["THAT","THIS","ARG","LCL"]
         addr = ["1", "2", "3", "4"]
         s = ""
         for seg, a in zip(segs, addr):
             s += "@"+a + "\n"
             s += "D = A" + "\n"
             s += "@R13" + "\n"
-            s += "A = M+D" + "\n"
+            s += "A = M-D" + "\n"
             s += "D = M" + "\n"
             s += "@"+seg + "\n"
             s += "M = D" + "\n"
@@ -280,12 +282,18 @@ class CodeWriter:
 
     def writeReturn(self,command):
         s = ""
-        # save return address to R13
+        # R13 is address of buttom of current stack
         s += "@LCL" + "\n"
         s += "D = M" + "\n"
-        s += "@5" + "\n"
-        s += "D = D-A" + "\n"
         s += "@R13" + "\n"
+        s += "M = D" + "\n"
+        s += "@5" + "\n"
+        s += "D = A" + "\n"
+        s += "@R13" + "\n"
+        s += "A = M-D" + "\n"
+        s += "D = M" + "\n"
+        # save return address to R14
+        s += "@R14" + "\n"
         s += "M = D" + "\n"
         # save function value to top of the caller's stack (address of current ARG[0])
         s += "@SP" + "\n"
@@ -302,7 +310,7 @@ class CodeWriter:
         # restore original environment
         s += self.writeRestoreFrame()
         # jumpt to return address
-        s += "@R13" + "\n"
+        s += "@R14" + "\n"
         s += "A = M" + "\n"
         s += "0 ; JMP" + "\n"
         return s

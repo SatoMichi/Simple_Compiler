@@ -55,7 +55,10 @@ class VM_Translator:
 
 if __name__ == "__main__":
     pathi = sys.argv[1]
-    patho = pathi[:-3]+".asm"
+    if pathi.endswith(".vm"):
+        patho = pathi[:-3]+".asm"
+    else:
+        patho = pathi+".asm"
     vm = VM_Translator(pathi)
     vm.parseFiles()
     vm.translate()
