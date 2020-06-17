@@ -14,15 +14,17 @@ This project is tring to implement the assembler and compiler by Python based on
       dictionary in Python can be directly used instead of this class.
 
     * VM実装に際して参考文献と同じく二段階で構築を行った。演算部分とメモリアクセスのみを担当するシンプルバージョンを実装したのち、完成版の
-      VM変換器のほうでプログラムフローと関数呼び出しの制御をつけ足してVM言語からアセンブリ言語へと変換する変換器を完成させた。
-      VM変換器は基本的にはアセンブラと同じような構造となっている。ただし、コードライターは内部的に異なるアセンブリ言語のラベルを生成するために
-      カウントを覚えておく必要があったため、関数ではなくクラスとして実装した。また変換器のメソッドはお互いにある程度独立しており、変換を完了
-      するには全メソッドを順番に呼ぶ必要がある。
+      VM変換器のほうでプログラムフローと関数呼び出しの制御をつけ足してVM言語からアセンブリ言語へと変換する変換器を完成させた。完成品のVM変換器は
+      二つあるがOld.Verのほうが生成するアセンブリコードの長さが少しだけ長い。具体的には最新版の完成品のほうはreturnの処理の部分を少しだけ
+      洗練させて、生成するコードが短くなるようにしてある。しかしごく小さな違いのでどちらを使っても問題ない。VM変換器は基本的にはアセンブラと同じような構造となっている。ただし、コードライターは内部的に異なるアセンブリ言語のラベルを生成するためにカウントを覚えておく必要があったため、
+      関数ではなくクラスとして実装した。また変換器のメソッドはお互いにある程度独立しており、変換を完了するには全メソッドを順番に呼ぶ必要がある。
       The project construct the VM translator in 2 steps as it is suggested in referenced book. First version implemented Arithmetic 
-      operation and Memory accsess, and final version added implementation of Program flow and Function call.
-      The structure of VM translator is basically same with Assembler. However, CodeWriter is implemented as class, since it need to 
-      record number of command called to generate the different Assembler Label. In addition, there is no one method which will translate
-      the code at once. Instead of that, each methods have to be called in appropriate order.
+      operation and Memory accsess, and final version added implementation of Program flow and Function call. There are two version of 
+      completed VM traslator. Version without "oldVer" produces less amount of Assembler code, since its "return" part of implementation is
+      little improved. However, both Version should work propery since, there is no big difference between these two. The structure of 
+      VM translator is basically same with Assembler. However, CodeWriter is implemented as class, since it need to record number of command
+      called to generate the different Assembler Label. In addition, there is no one method which will translate the code at once. 
+      Instead of that, each methods have to be called in appropriate order.
 
 Reference lists:  
 コンピュータシステムの理論と実装 ―モダンなコンピュータの作り方　オライリージャパン (2015/3/25)
