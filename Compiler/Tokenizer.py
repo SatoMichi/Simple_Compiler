@@ -1,7 +1,36 @@
 import re
+import sys
 
 def tokenize(text):
-    words = re.split(r"\s+|//.*\n|//*.*/*/|//*/*.*/*/")
+    #print("Original")
+    #print(text)
+    text = re.sub(r"//.*\n"," ",text)
+    text = re.sub(r"/\*.*\*/", " ",text)
+    #print("Remove Comments")
+    #print(text)
+    text = text.replace("{"," { ")
+    text = text.replace("}"," } ")
+    text = text.replace("["," [ ")
+    text = text.replace("]"," ] ")
+    text = text.replace("("," ( ")
+    text = text.replace(")"," ) ")
+    text = text.replace("."," . ")
+    text = text.replace(","," , ")
+    text = text.replace(";"," ; ")
+    text = text.replace("+"," + ")
+    text = text.replace("-"," - ")
+    text = text.replace("*"," * ")
+    text = text.replace("/"," / ")
+    text = text.replace("&"," & ")
+    text = text.replace("|"," | ")
+    text = text.replace("~"," ~ ")
+    text = text.replace("<"," < ")
+    text = text.replace(">"," > ")
+    text = text.replace("="," = ")
+    #print("Spacing")
+    #print(text)
+    words = re.split(r"\s+",text)
+    words = [word for word in words if word]
     tokens = []
     for token in words:
         ctype = commandType(token)
@@ -46,31 +75,38 @@ def commandType(token):
     else:
         return "IDENTIFIER"
 
-def writeTokensXML(tokens):
+def writeTokensXML(tokens,path):
     symbolConvert = {
-        "<":"&lt"
-        ">":"&gt"
-        "&":"&amp"
+        "<":"&lt;",
+        ">":"&gt;",
+        "&":"&amp;"
     }
-    with open("tokens.txt","w") as f:
+    with open(path+".xml","w") as f:
         f.write("<tokens>\n")
         for token in tokens:
             if token["Type"] == "KEYWORDS":
                 words = token["token"]
-                f.write("<keyword>"+words+"</keyword>/n")
+                f.write("<keyword> "+words+" </keyword>\n")
             elif token["Type"] == "SYMBOLS":
                 if token["token"] in symbolConvert:
                     word = symbolConvert[token["token"]]
                 else:
                     word = token["token"]
-                f.write("<symbol>"+word+"</symbol>\n")
+                f.write("<symbol> "+word+" </symbol>\n")
             elif token["Type"] == "INT_CONST":
                 word = token["token"]
-                f.write("<integerConstant>"+word+"</integerConstant>\n")
+                f.write("<integerConstant> "+word+" </integerConstant>\n")
             elif token["Type"] == "STRING_CONST":
                 word = token["token"][1:-1]
-                f.write("<stringConstant>"+word+"</stringConstant>\n")
+                f.write("<stringConstant> "+word+" </stringConstant>\n")
             else:
                 word = token["token"]
-                f.write("<identifier>"+word+"</identifier>\n")
+                f.write("<identifier> "+word+" </identifier>\n")
         f.write("</tokens>")
+
+if __name__ == "__main__":
+    path = sys.argv[1]
+    with open(path) as f:
+        text = f.read()
+    tokens = tokenize(text)
+    writeTokensXML(tokens,path[:-5])
