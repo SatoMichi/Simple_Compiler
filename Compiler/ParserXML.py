@@ -31,12 +31,12 @@ class ParserXML:
     def complieClass(self):
         self.xml += "<class>\n"
         for i in range(3):
-            self.writeToken()
+            self.writeToken()  # class className {
         while self.tokens[self.count]["token"] in ["static","field"]:
             self.compileClassVarDec()
         while self.tokens[self.count]["token"] in ["constructor","method","function"]:
             self.compileSubroutine()
-        self.writeToken()
+        self.writeToken()       # }
         self.xml += "</class>\n"
 
     def compileClassVarDec(self):
