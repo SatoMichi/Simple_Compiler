@@ -85,14 +85,14 @@ class ParserXML:
         self.xml += "</parameterList>\n"
 
     def compileVarDec(self):
-        self.xml += "<VarDec>\n"
+        self.xml += "<varDec>\n"
         for i in range(3):
             self.writeToken()       # var type VarName
         while self.tokens[self.count]["token"] == ",":
             for i in range(2):
                 self.writeToken()   # , VarName
         self.writeToken()           # ;
-        self.xml += "</VarDec>\n"
+        self.xml += "</varDec>\n"
 
     def compileStatements(self):
         self.xml += "<statements>\n"
@@ -189,7 +189,7 @@ class ParserXML:
             self.writeToken()           # [
             self.compileExpression()
             self.writeToken()           # ]
-        elif self.tokens[self.count+1]["token"] == "(":
+        elif self.tokens[self.count+1]["token"] in ["(","."]:
             self.compileSubroutineCall()
         else:
             self.writeToken()           # (intConst|StringConst|KeyConst|varName)

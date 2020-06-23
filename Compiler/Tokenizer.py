@@ -29,8 +29,25 @@ def tokenize(text):
     text = text.replace("="," = ")
     #print("Spacing")
     #print(text)
+
+    # replace String with space to no sapce ver
+    def replace_(text):
+        return text.replace(" ","#")
+    strings = re.findall(r'".*"',text)
+    for s in strings:
+        text = re.sub(s,replace_(s),text)
+    
     words = re.split(r"\s+",text)
     words = [word for word in words if word]
+    
+    # restore String with space
+    def replaceS(text):
+        return text.replace("#"," ")
+    pat = re.compile(r'".*"')
+    for i in range(len(words)):
+        if pat.match(words[i]):
+            words[i] = replaceS(words[i])
+
     tokens = []
     for token in words:
         ctype = commandType(token)
