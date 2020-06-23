@@ -9,7 +9,7 @@ def tokenize(text):
     text = pat.sub(" ",text)
     #text = re.sub(r"/\*.*\*/", " ",text)
     #print("Remove Comments")
-    print(text)
+    #print(text)
     text = text.replace("{"," { ")
     text = text.replace("}"," } ")
     text = text.replace("["," [ ")
