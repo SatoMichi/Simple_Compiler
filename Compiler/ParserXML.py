@@ -66,14 +66,148 @@ class ParserXML:
         self.xml += "</subroutineDec>\n"
     
     def complieParameterList(self):
-        pass
+        self.xml += "<ParameterList>\n"
+        if self.tokens[self.count]["token"] == ")": # has no parameters
+            pass
+        else: 
+            for i in range(2):
+                self.writeToken()                   # type VarName
+            while self.tokens[self.count]["token"] == ",":
+                for i in range(3):
+                    self.writeToken()               # , type VarName
+        self.xml += "</ParameterList>\n"
 
     def compileVarDec(self):
-        pass
+        self.xml += "<VarDec>\n"
+        for i in range(3):
+            self.writeToken()       # var type VarName
+        while self.tokens[self.count]["token"] == ",":
+            for i in range(2):
+                self.writeToken()   # , VarName
+        self.writeToken()           # ;
+        self.xml += "</VarDec>\n"
 
     def compileStatements(self):
-        pass
+        self.xml += "<Statements>\n"
+        if self.tokens[self.count] == "}":  # no statements
+            pass
+        else:
+            while self.tokens[self.count] in ["do","let","while","return","if"]:
+                if self.tokens[self.count]["token"] == "do":
+                    self.compileDo()
+                elif self.tokens[self.count]["token"] == "let":
+                    self.compileLet()
+                elif self.tokens[self.count]["token"] == "while":
+                    self.compileWhile()
+                elif self.tokens[self.count]["token"] == "return":
+                    self.compileReturn()
+                elif self.tokens[self.count]["token"] == "if":
+                    self.compileIf()
+        self.xml += "<Statements>\n"
 
+    def compileDo(self):
+        self.xml += "<doStatement>\n"
+        self.writeToken()               # do
+        self.compileSubroutineCall()
+        self.writeToken()               # ;
+        self.xml += "</doStatement>\n"
 
-            
+    def compileLet(self):
+        self.xml += "<letStatement>\n"
+        for i in range(2):
+            self.writeToken()           # let varName
+        if self.tokens[self.count]["token"] == "[":
+            self.writeToken()           # [
+            self.compileExpression()
+            self.writeToken()           # ]
+        self.writeToken()               # =
+        self.compileExpression()
+        self.writeToken()               # ;
+        self.xml += "</letStatement>\n"
 
+    def compileWhile(self):
+        self.xml += "<whileStatement>\n"
+        self.writeToken()           # while
+        self.writeToken()           # (
+        self.compileExpression()    
+        self.writeToken()           # )
+        self.writeToken()           # {
+        self.compileStatements()
+        self.writeToken()           # }
+        self.xml += "</whileStatement>\n"
+
+    def compileReturn(self):
+        self.xml += "<returnStatement>\n"
+        self.writeToken()       # return
+        if not self.tokens[self.count]["token"] == ";":
+            self.compileExpression()
+        self.writeToken()       # ;
+        self.xml += "</returnStatement>\n"
+
+    def compileIf(self):
+        self.xml += "<ifStatement>\n"
+        self.writeToken()           # if
+        self.writeToken()           # (
+        self.compileExpression()
+        self.writeToken()           # )
+        self.writeToken()           # {
+        self.compileStatements()
+        self.writeToken()           # }
+        if self.tokens[self.count]["token"] == "else":
+            self.writeToken()       # else
+            self.writeToken()       # {
+            self.compileStatements()
+            self.writeToken()       # }
+        self.xml += "</ifStatement>\n"
+
+    def compileExpression(self):
+        self.xml += "<expression>\n"
+        self.compileTerm()
+        while self.tokens[self.count]["token"] in ["+","-","*","/","&","|","<",">","="]:
+            self.writeToken()       # op
+            self.compileTerm()
+        self.xml += "</expression>\n"
+
+    def compileTerm(self):
+        self.xml += "<term>\n"
+        if self.tokens[self.count]["token"] == "(":
+            self.writeToken()           # (
+            self.compileExpression()
+            self.writeToken()           # )
+        elif self.tokens[self.count]["token"] in ["-","~"]:
+            self.writeToken()           # op
+            self.compileTerm()
+        elif self.tokens[self.count+1]["token"] == "[":
+            self.writeToken()           # varName
+            self.writeToken()           # [
+            self.compileExpression()
+            self.writeToken()           # ]
+        elif self.tokens[self.count+1]["token"] == "(":
+            self.compileSubroutineCall()
+        else:
+            self.writeToken()           # (intConst|StringConst|KeyConst|varName)
+        self.xml += "</term>\n"
+    
+    def compileSubroutineCall(self):
+        self.xml += "<subroutineCall>\n"
+        if self.tokens[self.count+1]["token"] == ".":
+            for i in range(3):
+                self.writeToken()               # (className|varName) . subroutineName
+        else:
+            self.writeToken()                   # subroutineName 
+        self.writeToken()                       # (
+        self.compileExpressionList()
+        self.writeToken()                       # ) 
+        self.xml += "</subroutineCall>\n"
+
+    def compileExpressionList(self):
+        self.xml += "<expressionList>\n"
+        if self.tokens[self.count]["token"] == ")":
+            pass
+        else:
+            self.compileExpression()
+            while self.tokens[self.count]["token"] == ",":
+                for i in range(2):
+                    self.writeToken()           # ,
+                    self.compileExpression()
+        self.xml += "</expressionList>\n"
