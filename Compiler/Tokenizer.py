@@ -32,18 +32,27 @@ def tokenize(text):
     #print("Spacing")
     #print(text)
 
-    # replace String with space to no sapce ver
+    # Replace String with space to no sapce ver
+    # function for escape special char in regex
+    def toRegex(text):
+        spChars = list("([{|}]).?+*^$")
+        for sp in spChars:
+            text = text.replace(sp,'\\'+sp)
+        return text
     def replace_(text):
         return text.replace(" ","#")
-    strings = re.findall(r'".*"',text)
+    strings = [toRegex(s) for s in re.findall(r'".*"',text)]
     for s in strings:
         text = re.sub(s,replace_(s),text)
-    
+    #print(text)
+
+    # tokenize
     words = re.split(r"\s+",text)
     words = [word for word in words if word]
     
     # restore String with space
     def replaceS(text):
+        text = text.replace("\\","") # remove \ due to toRegex()
         return text.replace("#"," ")
     pat = re.compile(r'".*"')
     for i in range(len(words)):
