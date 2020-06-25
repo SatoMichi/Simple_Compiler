@@ -28,5 +28,11 @@ This project is tring to implement the assembler and compiler by Python based on
       called to generate the different Assembler Label. In addition, there is no one method which will translate the code at once. 
       Instead of that, each methods have to be called in appropriate order.
 
+    * コンパイラーは参考文献の進捗方法と同じく先にJack言語をXMLで表せる構文木へと分解するプログラムを作成、その後そこで培った技術を拡張して
+      完成品のコンパイラーを実装した。モジュールの構造なども基本的には参考文献の内容に即したものとなっている。
+      The Compiler was constructed in 2 steps as referenced book suggested. First, a Parser which convert Jack language to XML which represents
+      the syntax tree is implemented. After that, the Compiler was written by extending the Parser. The structure of the modules in Compiler
+      program is bassically following the suggestion in referenced book.
+
 Reference lists:  
 コンピュータシステムの理論と実装 ―モダンなコンピュータの作り方　オライリージャパン (2015/3/25)
