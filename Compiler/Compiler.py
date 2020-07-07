@@ -11,7 +11,7 @@ class Compiler:
         self.count = 0
         self.ClassScope = SymbolTable()
         self.SubroutineScope = SymbolTable()
-        self.label_count = 0
+        self.label_count = {"if":0, "while":0}
         self.vmcode = ""
     
     def writeVMcode(self,path):
@@ -63,7 +63,9 @@ class Compiler:
         self.vmcode += VMWriter.writeFunction(self.className+"."+subroutineName,num_locals)
         self.compileStatements()
         self.advance()                      # }
-    
+        self.label_count["if"] = 0
+        self.label_count["while"] = 0
+
     def complieParameterList(self):
         if self.tokens[self.count]["token"] == ")": # has no parameters
             pass
@@ -89,7 +91,7 @@ class Compiler:
             self.advance()                  # ,
             symbolName = self.takeWord()    # VarName
             self.SubroutineScope.define(symbolName,symbolType,symbolKind)
-            num_locals = 1
+            num_locals += 1
         self.advance()                      # ;
         return num_locals
 
@@ -134,7 +136,6 @@ class Compiler:
         self.vmcode += VMWriter.writeCall(subroutineName,num_args)
         # since this code will not save returned value in to variable, pop it out.
         self.vmcode += VMWriter.writePop('temp','0')
-
         self.advance()                              # )
         self.advance()                              # ;
 
@@ -158,47 +159,88 @@ class Compiler:
         if not isArray:
             self.vmcode += VMWriter.writePop(symbol['kind'],symbol['index'])
         else:
+            # store result to temp 0
             self.vmcode += VMWriter.writePop('temp','0')
+            # store address of array to THAT
             self.vmcode += VMWriter.writePop('pointer','1')
+            # restore result
             self.vmcode += VMWriter.writePush('temp','0')
+            # save result to THAT
             self.vmcode += VMWriter.writePop(segment='that', index='0')
         self.advance()                  # ;
 
     def compileWhile(self):
-        self.xml += "<whileStatement>\n"
-        self.writeToken()           # while
-        self.writeToken()           # (
-        self.compileExpression()    
-        self.writeToken()           # )
-        self.writeToken()           # {
+        # label whileStart
+        self.vmcode += VMWriter.writeLabel("WHILE_START_"+self.label_count["while"])
+        self.advance()           # while
+        self.advance()           # (
+        self.compileExpression()
+        self.advance()           # )
+        # if not exp == True: goto whileEnd
+        self.vmcode += VMWriter.writeArithmetic("~")
+        self.vmcode += VMWriter.writeIfGoto("WHILE_END_"+self.label_count["while"])
+        self.advance()           # {
         self.compileStatements()
-        self.writeToken()           # }
-        self.xml += "</whileStatement>\n"
+        # goto whileStart
+        self.vmcode += VMWriter.writeGoto("WHILE_START_"+self.label_count["while"])
+        self.advance()           # }
+        # label whileEnd
+        self.vmcode += VMWriter.writeLabel("WHILE_END_"+self.label_count["while"])
+        self.label_count["while"] += 1
 
     def compileReturn(self):
-        self.xml += "<returnStatement>\n"
-        self.writeToken()       # return
+        self.advance()       # return
         if not self.tokens[self.count]["token"] == ";":
+            # push result to stack
             self.compileExpression()
-        self.writeToken()       # ;
-        self.xml += "</returnStatement>\n"
+        else:
+            # push constant 0 to stack for void
+            self.vmcode += VMWriter.writePush("constant","0")
+        self.advance()       # ;
+        self.vmcode += VMWriter.writeReturn()
 
     def compileIf(self):
-        self.xml += "<ifStatement>\n"
-        self.writeToken()           # if
-        self.writeToken()           # (
+        self.advance()           # if
+        self.advance()           # (
         self.compileExpression()
-        self.writeToken()           # )
-        self.writeToken()           # {
-        self.compileStatements()
-        self.writeToken()           # }
+        self.advance()           # )
+        # if expression: goto IF_TRUE
+        self.vmcode += VMWriter.writeIfGoto("IF_TRUE_"+self.label_count["if"])
+        # if not expression: goto IF_FALSE
+        self.vmcode += VMWriter.writeGoto("IF_FALSE_"+self.label_count["if"])
+        # label IF_TRUE
+        self.vmcode += VMWriter.writeLabel("IF_TRUE_"+self.label_count["if"])
+        self.advance()           # {
+        self.compileCondStatements()
+        self.advance()           # }
+        # else exist
         if self.tokens[self.count]["token"] == "else":
-            self.writeToken()       # else
-            self.writeToken()       # {
-            self.compileStatements()
-            self.writeToken()       # }
-        self.xml += "</ifStatement>\n"
+            self.advance()       # else
+            self.advance()       # {
+            # if excuted if part, got IF_END
+            self.vmcode += VMWriter.writeGoto("IF_END_"+self.label_count["if"])
+            # label IF_FALSE
+            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+self.label_count["if"])
+            self.compileCondStatements()
+            # label IF_END
+            self.vmcode += VMWriter.writeLabel("IF_END_"+self.label_count["if"])
+            self.advance()          # }
+        else:
+            # label IF_FALSE
+            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+self.label_count["if"])
 
+    def compileCondStatements(self):
+        # nested if
+        if self.tokens[self.count]["token"] == "if":
+            self.label_count["if"] += 1
+            self.compileStatements()
+            self.label_count["if"] -= 1
+        else:
+            self.compileStatements()
+
+
+    # TO DO
+    
     def compileExpression(self):
         self.xml += "<expression>\n"
         self.compileTerm()

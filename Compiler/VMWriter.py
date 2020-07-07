@@ -25,7 +25,7 @@ def writeLabel(label):
 def writeGoto(label):
     return "goto "+str(label)+"\n"
 
-def writeIf(label):
+def writeIfGoto(label):
     return "if-goto "+str(label)+"\n"
 
 def writeCall(func,argsNum):
