@@ -29,10 +29,12 @@ This project is tring to implement the assembler and compiler by Python based on
       Instead of that, each methods have to be called in appropriate order.
 
     * コンパイラーは参考文献の進捗方法と同じく先にJack言語をXMLで表せる構文木へと分解するプログラムを作成、その後そこで培った技術を拡張して
-      完成品のコンパイラーを実装した。モジュールの構造なども基本的には参考文献の内容に即したものとなっている。
+      完成品のコンパイラーを実装した。モジュールの構造なども基本的には参考文献の内容に即したものとなっている。明確なテスト法が存在しなかった
+      ため、このコンパイラーの変換の正確性は確認できていないが、構文エラーを含まないVMコードを作り出すことは確認済みである。
       The Compiler was constructed in 2 steps as referenced book suggested. First, a Parser which convert Jack language to XML which represents
       the syntax tree is implemented. After that, the Compiler was written by extending the Parser. The structure of the modules in Compiler
-      program is bassically following the suggestion in referenced book.
+      program is bassically following the suggestion in referenced book. Since there is no clear test method for this Compiler, the Accuracy of
+      this compiler is not guaranteed, however, it is guranteed that this compiler will not produce VM code with syntax errors.
 
 Reference lists:  
 コンピュータシステムの理論と実装 ―モダンなコンピュータの作り方　オライリージャパン (2015/3/25)
