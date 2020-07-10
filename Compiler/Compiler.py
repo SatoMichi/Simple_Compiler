@@ -166,7 +166,7 @@ class Compiler:
             # restore result
             self.vmcode += VMWriter.writePush('temp','0')
             # save result to THAT
-            self.vmcode += VMWriter.writePop(segment='that', index='0')
+            self.vmcode += VMWriter.writePop('that','0')
         self.advance()                  # ;
 
     def compileWhile(self):
@@ -238,31 +238,31 @@ class Compiler:
         else:
             self.compileStatements()
 
-
     # TO DO
     
     def compileExpression(self):
-        self.xml += "<expression>\n"
         self.compileTerm()
         while self.tokens[self.count]["token"] in ["+","-","*","/","&","|","<",">","="]:
-            self.writeToken()       # op
+            self.advance()       # op
             self.compileTerm()
-        self.xml += "</expression>\n"
 
     def compileTerm(self):
-        self.xml += "<term>\n"
-        if self.tokens[self.count]["token"] == "(":
-            self.writeToken()           # (
+        # intConst
+        if self.tokens[self.count]["token"].isdigit():
+            self.vmcode += VMWriter.writePush("constant",self.takeWord())
+        # (exp)
+        elif self.tokens[self.count]["token"] == "(":
+            self.advance()           # (
             self.compileExpression()
-            self.writeToken()           # )
+            self.advance()           # )
+        # unaryOP term
         elif self.tokens[self.count]["token"] in ["-","~"]:
             self.writeToken()           # op
             self.compileTerm()
+        # Array element
         elif self.tokens[self.count+1]["token"] == "[":
-            self.writeToken()           # varName
-            self.writeToken()           # [
-            self.compileExpression()
-            self.writeToken()           # ]
+           self.compileArrayEXP()
+        # Subroutine Call
         elif self.tokens[self.count+1]["token"] in ["(","."]:
             self.compileSubroutineCall()
         else:
@@ -270,33 +270,31 @@ class Compiler:
         self.xml += "</term>\n"
     
     def compileSubroutineCall(self):
+        subroutine_name = ""
         if self.tokens[self.count+1]["token"] == ".":
-            caller = self.takeWord()                    # (className|varName) 
-            symbol = self.findSymbol(caller)
-            self.advance()                              # .
-            func = self.takeWord()                      # subroutineName
+            for i in range(3):
+                subroutine_name += self.takeWord()      # (className|varName) . subroutineName
         else:
-            func = self.takeWord()                      # subroutineName
-        
-        if symbol:
-            segment = 'local'
-            index = symbol['index']
-            self.vmcode += VMWriter.writePush(segment,index)
-            symbolType = symbol['type']
-        else:
-            symbolType = caller
-
-        subroutineName = symbolType+'.'+func
-        self.writeToken()                               # (
+            subroutine_name = self.takeWord()           # subroutineName 
+        self.advance()                                  # (
         num_args = self.compileExpressionList()
-        if symbol:
-            # for this
-            num_args += 1 
-        
-        self.vmcode += VMWriter.writeCall(subroutineName,num_args)
+        self.vmcode += VMWriter.writeCall(subroutine_name, num_args)
+        self.advance()                                  # ) 
 
-        self.vmcode += VMWriter.writePop('temp','0')
-        self.writeToken()                               # )
+    def compileArrayEXP(self):
+        symbolName = self.takeWord()            # varName
+        symbol = self.findSymbol(symbolName)
+        self.advance()                          # [
+        self.compileExpression()
+        # push base address to stack
+        self.vmcode += VMwriter.writePush("local",symbol['index'])
+        # add index(expression result) and base addresses
+        self.vmcode += VMwriter.writeArithmetic('+')
+        # pop address into THAT
+        self.vmcode += VMwriter.writePop("pointer","1")
+        # push value to stack
+        self.vmcode += VMwriter.writePush("that","0")
+        self.advance()                          # ]
 
     def compileExpressionList(self):
         self.xml += "<expressionList>\n"
