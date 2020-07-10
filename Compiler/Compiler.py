@@ -238,18 +238,48 @@ class Compiler:
         else:
             self.compileStatements()
 
-    # TO DO
-    
     def compileExpression(self):
+        # Order of operations is from front to back
         self.compileTerm()
         while self.tokens[self.count]["token"] in ["+","-","*","/","&","|","<",">","="]:
-            self.advance()       # op
+            op = self.takeWord()       # op
             self.compileTerm()
+            # execute op
+            if op == "*":
+                self.vmcode += VMWriter.writeCall("Math.multiply",2)
+            elif op == "/":
+                self.vmcode += VMWriter.writeCall("Math.divide",2)
+            else:
+                self.vmcode += VMWriter.writeArithmetic(op)
 
     def compileTerm(self):
         # intConst
-        if self.tokens[self.count]["token"].isdigit():
-            self.vmcode += VMWriter.writePush("constant",self.takeWord())
+        if self.tokens[self.count]["Type"]=="INT_CONST":
+            i = self.takeWord()
+            self.vmcode += VMWriter.writePush("constant",i)
+        # StringConst
+        elif self.tokens[self.count]["Type"]=="STRING_CONST":
+            s = self.takeWord()
+            self.compileString(s)
+        # KeyConst
+        elif self.tokens[self.count]["Type"]=="KEYWORDS":
+            word = self.takeWord()
+            if word == "null":
+                self.vmcode += VMWriter.writePush("constant",0)
+            elif word =="true":
+                self.vmcode += VMWriter.writePush("constant",0)
+                self.vmcode += VMWriter.writeArithmetic("~")
+            elif word=="false":
+                self.vmcode += VMWriter.writePush("constant",0)
+            elif word=="this":
+                self.vmcode += VMWriter.writePush("this",0)
+        # varName
+        elif self.tokens[self.count]["Type"]=="IDENTIFIER":
+            var = self.takeWord()
+            symbol = self.findSymbol(var)
+            segment = symbol['kind']
+            index = symbol['index']
+            self.vmcode += VMWriter.writePush(segment,index)
         # (exp)
         elif self.tokens[self.count]["token"] == "(":
             self.advance()           # (
@@ -257,18 +287,27 @@ class Compiler:
             self.advance()           # )
         # unaryOP term
         elif self.tokens[self.count]["token"] in ["-","~"]:
-            self.writeToken()           # op
+            op = self.takeWord()        # op
             self.compileTerm()
+            self.vmcode += VMWriter.writeArithmetic(op)
         # Array element
         elif self.tokens[self.count+1]["token"] == "[":
            self.compileArrayEXP()
         # Subroutine Call
         elif self.tokens[self.count+1]["token"] in ["(","."]:
             self.compileSubroutineCall()
-        else:
-            self.writeToken()           # (intConst|StringConst|KeyConst|varName)
-        self.xml += "</term>\n"
-    
+        
+    def compileString(self,s):
+        # use standard library String
+        str_len = len(s)
+        self.vmcode += VMWriter.writePush("constant",str_len)
+        self.vmcode += VMWriter.writeCall("String.new",1)
+        for c in self.tokens[self.count]["token"]:
+            if not c == "\"":
+                asciic = ord(c)
+                self.vmcode += VMWriter.writePush("constant",asciic)
+                self.vmcode += VMWriter.writeCall("String.appendChar",2)
+
     def compileSubroutineCall(self):
         subroutine_name = ""
         if self.tokens[self.count+1]["token"] == ".":
@@ -297,15 +336,17 @@ class Compiler:
         self.advance()                          # ]
 
     def compileExpressionList(self):
-        self.xml += "<expressionList>\n"
+        num_args = 0
         if self.tokens[self.count]["token"] == ")":
-            pass
+            return num_args
         else:
             self.compileExpression()
+            num_args += 1
             while self.tokens[self.count]["token"] == ",":
-                self.writeToken()               # ,
+                self.advance()               # ,
                 self.compileExpression()
-        self.xml += "</expressionList>\n"
+                num_args += 1
+            return num_args
 
     def findSymbol(self,symbol):
         if symbol in [s["name"] for s in self.SubroutineScope]:
