@@ -6,7 +6,7 @@ def writePop(segment,index):
     return "pop "+str(segment)+" "+str(index)+"\n"
 
 def writeArithmetic(command):
-     ArithmeticLogicOP = {
+    ArithmeticLogicOP = {
         '+': 'add',
         '-': 'sub',
         '=': 'eq',

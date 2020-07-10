@@ -15,7 +15,7 @@ class Compiler:
         self.vmcode = ""
     
     def writeVMcode(self,path):
-        self.complieClass()
+        self.compileClass()
         with open(path,"w") as f:
             f.write(self.vmcode)
 
@@ -50,7 +50,7 @@ class Compiler:
     
     def compileSubroutine(self):
         self.SubroutineScope.reset()
-        self.advance()                      # (constructor|method|function)
+        ftype = self.takeWord()             # (constructor|method|function)
         self.advance()                      # type
         subroutineName = self.takeWord()    # SubroutineName
         self.advance()                      # (
@@ -61,6 +61,16 @@ class Compiler:
         while self.tokens[self.count]["token"] in ["var"]:
             num_locals += self.compileVarDec()
         self.vmcode += VMWriter.writeFunction(self.className+"."+subroutineName,num_locals)
+        # if function is constructor, it should allocate memory for produced object
+        if ftype == "constructor":
+            # allocate needed memory
+            num_field = self.ClassScope.varCount("field")
+            self.vmcode += VMWriter.writePush("constant",num_field)
+            self.vmcode += VMWriter.writeCall("Memory.alloc",1)
+            # link it to This
+            self.vmcode += VMWriter.writePop("pointer",0)
+            # change all FIELD in ClassScope to THIS
+            self.ClassScope.field2This()
         self.compileStatements()
         self.advance()                      # }
         self.label_count["if"] = 0
@@ -114,17 +124,23 @@ class Compiler:
     def compileDo(self):
         self.advance()                              # do
         caller = self.takeWord()                    # (className|varName) 
-        symbol = self.findSymbol(caller)
-        self.advance()                              # .
-        func = self.takeWord()                      # subroutineName   
+        symbol = self.findSymbol(caller)  
         # if object exist, push it in to stack
         if symbol:
+            self.advance()                              # .
+            func = self.takeWord()                      # subroutineName 
             segment = 'local'
             index = symbol['index']
             self.vmcode += VMWriter.writePush(segment,index)
             symbolType = symbol['type']
-        else:
+        # Static method called
+        elif self.tokens[self.count]["token"] == ".":
             symbolType = caller
+            self.advance()                              # .
+            func = self.takeWord()                      # subroutineName 
+        else:
+            symbolType = self.className
+            func = caller
         # decide subroutine name
         subroutineName = symbolType+'.'+func
         self.advance()                              # (
@@ -151,9 +167,9 @@ class Compiler:
             # push base address
             self.vmcode += VMWriter.writePush(symbol['kind'],symbol['index'])
             # add two addresses
-            self.vmcode += VMwriter.writeArithmetic('+')
+            self.vmcode += VMWriter.writeArithmetic('+')
             self.advance()              # ]
-        self.advence()                  # =
+        self.advance()                  # =
         # this will push result to stack
         self.compileExpression()
         if not isArray:
@@ -171,21 +187,21 @@ class Compiler:
 
     def compileWhile(self):
         # label whileStart
-        self.vmcode += VMWriter.writeLabel("WHILE_START_"+self.label_count["while"])
+        self.vmcode += VMWriter.writeLabel("WHILE_START_"+str(self.label_count["while"]))
         self.advance()           # while
         self.advance()           # (
         self.compileExpression()
         self.advance()           # )
         # if not exp == True: goto whileEnd
         self.vmcode += VMWriter.writeArithmetic("~")
-        self.vmcode += VMWriter.writeIfGoto("WHILE_END_"+self.label_count["while"])
+        self.vmcode += VMWriter.writeIfGoto("WHILE_END_"+str(self.label_count["while"]))
         self.advance()           # {
         self.compileStatements()
         # goto whileStart
-        self.vmcode += VMWriter.writeGoto("WHILE_START_"+self.label_count["while"])
+        self.vmcode += VMWriter.writeGoto("WHILE_START_"+str(self.label_count["while"]))
         self.advance()           # }
         # label whileEnd
-        self.vmcode += VMWriter.writeLabel("WHILE_END_"+self.label_count["while"])
+        self.vmcode += VMWriter.writeLabel("WHILE_END_"+str(self.label_count["while"]))
         self.label_count["while"] += 1
 
     def compileReturn(self):
@@ -205,11 +221,11 @@ class Compiler:
         self.compileExpression()
         self.advance()           # )
         # if expression: goto IF_TRUE
-        self.vmcode += VMWriter.writeIfGoto("IF_TRUE_"+self.label_count["if"])
+        self.vmcode += VMWriter.writeIfGoto("IF_TRUE_"+str(self.label_count["if"]))
         # if not expression: goto IF_FALSE
-        self.vmcode += VMWriter.writeGoto("IF_FALSE_"+self.label_count["if"])
+        self.vmcode += VMWriter.writeGoto("IF_FALSE_"+str(self.label_count["if"]))
         # label IF_TRUE
-        self.vmcode += VMWriter.writeLabel("IF_TRUE_"+self.label_count["if"])
+        self.vmcode += VMWriter.writeLabel("IF_TRUE_"+str(self.label_count["if"]))
         self.advance()           # {
         self.compileCondStatements()
         self.advance()           # }
@@ -218,16 +234,16 @@ class Compiler:
             self.advance()       # else
             self.advance()       # {
             # if excuted if part, got IF_END
-            self.vmcode += VMWriter.writeGoto("IF_END_"+self.label_count["if"])
+            self.vmcode += VMWriter.writeGoto("IF_END_"+str(self.label_count["if"]))
             # label IF_FALSE
-            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+self.label_count["if"])
+            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+str(self.label_count["if"]))
             self.compileCondStatements()
             # label IF_END
-            self.vmcode += VMWriter.writeLabel("IF_END_"+self.label_count["if"])
+            self.vmcode += VMWriter.writeLabel("IF_END_"+str(self.label_count["if"]))
             self.advance()          # }
         else:
             # label IF_FALSE
-            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+self.label_count["if"])
+            self.vmcode += VMWriter.writeLabel("IF_FALSE_"+str(self.label_count["if"]))
 
     def compileCondStatements(self):
         # nested if
@@ -253,8 +269,24 @@ class Compiler:
                 self.vmcode += VMWriter.writeArithmetic(op)
 
     def compileTerm(self):
+        # unaryOP term
+        if self.tokens[self.count]["token"] in ["-","~"]:
+            op = self.takeWord()        # op
+            self.compileTerm()
+            self.vmcode += VMWriter.writeArithmetic(op)
+        # (exp)
+        elif self.tokens[self.count]["token"] == "(":
+            self.advance()           # (
+            self.compileExpression()
+            self.advance()           # )
+        # Subroutine Call
+        elif self.tokens[self.count+1]["token"] in ["(","."]:
+            self.compileSubroutineCall()
+        # Array element
+        elif self.tokens[self.count+1]["token"] == "[":
+           self.compileArrayEXP()
         # intConst
-        if self.tokens[self.count]["Type"]=="INT_CONST":
+        elif self.tokens[self.count]["Type"]=="INT_CONST":
             i = self.takeWord()
             self.vmcode += VMWriter.writePush("constant",i)
         # StringConst
@@ -272,7 +304,7 @@ class Compiler:
             elif word=="false":
                 self.vmcode += VMWriter.writePush("constant",0)
             elif word=="this":
-                self.vmcode += VMWriter.writePush("this",0)
+                self.vmcode += VMWriter.writePush("pointer",0)
         # varName
         elif self.tokens[self.count]["Type"]=="IDENTIFIER":
             var = self.takeWord()
@@ -280,29 +312,13 @@ class Compiler:
             segment = symbol['kind']
             index = symbol['index']
             self.vmcode += VMWriter.writePush(segment,index)
-        # (exp)
-        elif self.tokens[self.count]["token"] == "(":
-            self.advance()           # (
-            self.compileExpression()
-            self.advance()           # )
-        # unaryOP term
-        elif self.tokens[self.count]["token"] in ["-","~"]:
-            op = self.takeWord()        # op
-            self.compileTerm()
-            self.vmcode += VMWriter.writeArithmetic(op)
-        # Array element
-        elif self.tokens[self.count+1]["token"] == "[":
-           self.compileArrayEXP()
-        # Subroutine Call
-        elif self.tokens[self.count+1]["token"] in ["(","."]:
-            self.compileSubroutineCall()
         
     def compileString(self,s):
         # use standard library String
         str_len = len(s)
         self.vmcode += VMWriter.writePush("constant",str_len)
         self.vmcode += VMWriter.writeCall("String.new",1)
-        for c in self.tokens[self.count]["token"]:
+        for c in s:
             if not c == "\"":
                 asciic = ord(c)
                 self.vmcode += VMWriter.writePush("constant",asciic)
@@ -326,13 +342,13 @@ class Compiler:
         self.advance()                          # [
         self.compileExpression()
         # push base address to stack
-        self.vmcode += VMwriter.writePush("local",symbol['index'])
+        self.vmcode += VMWriter.writePush("local",symbol['index'])
         # add index(expression result) and base addresses
-        self.vmcode += VMwriter.writeArithmetic('+')
+        self.vmcode += VMWriter.writeArithmetic('+')
         # pop address into THAT
-        self.vmcode += VMwriter.writePop("pointer","1")
+        self.vmcode += VMWriter.writePop("pointer","1")
         # push value to stack
-        self.vmcode += VMwriter.writePush("that","0")
+        self.vmcode += VMWriter.writePush("that","0")
         self.advance()                          # ]
 
     def compileExpressionList(self):
@@ -349,10 +365,10 @@ class Compiler:
             return num_args
 
     def findSymbol(self,symbol):
-        if symbol in [s["name"] for s in self.SubroutineScope]:
-            return [s["name"] for s in self.SubroutineScope if s["name"] == symbol][0]
-        elif symbol in [s["name"] for s in self.ClassScope]:
-            return [s["name"] for s in self.ClassScope if s["name"] == symbol][0]
+        if symbol in [s["name"] for s in self.SubroutineScope.symbols]:
+            return [s for s in self.SubroutineScope.symbols if s["name"] == symbol][0]
+        elif symbol in [s["name"] for s in self.ClassScope.symbols]:
+            return [s for s in self.ClassScope.symbols if s["name"] == symbol][0]
         else:
             return None
 

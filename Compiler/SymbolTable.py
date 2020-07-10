@@ -38,3 +38,9 @@ class SymbolTable:
                 target = symbol
         if target:
             return target["index"]
+    
+    def field2This(self):
+        for i in range(len(self.symbols)):
+            if self.symbols[i]["kind"] == "field":
+                self.symbols[i]["kind"] = "this"
+    
